@@ -1,0 +1,19 @@
+# flatpak-builder build artifacts
+build-dir/
+.flatpak-builder/
+repo/
+
+# macOS metadata
+.DS_Store
+
+# Editor directories
+.vscode/
+.idea/
+
+# Cached Scrivener installer — too large for git and downloaded fresh by the script
+# If you want to commit a cached installer for testing, remove this line
+cache/
+*.exe
+
+# Log files
+*.log

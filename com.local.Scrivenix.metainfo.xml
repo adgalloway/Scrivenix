@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+
+  <id>com.local.Scrivenix</id>
+  <name>Scrivenix</name>
+  <summary>Scrivener 3 for Linux — via Wine</summary>
+
+  <!--
+    metadata_license applies to THIS file only, not to Scrivener itself.
+    FSFAP is the standard permissive licence for AppStream metadata.
+  -->
+  <metadata_license>FSFAP</metadata_license>
+
+  <!--
+    Scrivener 3 is proprietary software. This wrapper is local/personal use.
+    "LicenseRef-proprietary" signals to store tooling that this is not FOSS.
+  -->
+  <project_license>LicenseRef-proprietary</project_license>
+
+  <description>
+    <p>
+      Scrivenix is a local Flatpak wrapper that installs and launches
+      Scrivener 3 for Windows on any Linux machine that supports Flatpak
+      and Wine. It handles Wine prefix setup, .NET 4.8, font configuration,
+      and document folder mapping automatically.
+    </p>
+    <p>
+      Scrivener 3 is a third-party writing application by Literature and Latte.
+      A valid Scrivener licence is required.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">com.local.Scrivenix.desktop</launchable>
+
+  <url type="homepage">https://www.literatureandlatte.com/scrivener/</url>
+
+  <categories>
+    <category>Office</category>
+    <category>WordProcessor</category>
+  </categories>
+
+  <keywords>
+    <keyword>writing</keyword>
+    <keyword>novel</keyword>
+    <keyword>manuscript</keyword>
+    <keyword>scrivener</keyword>
+    <keyword>screenwriting</keyword>
+  </keywords>
+
+  <!--
+    Releases: bump version/date whenever you update the wrapper script.
+    AppStream validators require at least one release entry.
+  -->
+  <releases>
+    <release version="1.0.0" date="2025-01-01">
+      <description>
+        <p>Initial Scrivenix wrapper release.</p>
+      </description>
+    </release>
+  </releases>
+
+  <content_rating type="oars-1.1"/>
+
+</component>

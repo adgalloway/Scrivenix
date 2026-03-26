@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="ringC" cx="36%" cy="26%" r="70%">
+      <stop offset="0%" stop-color="#d4c8a8"/>
+      <stop offset="30%" stop-color="#a09070"/>
+      <stop offset="65%" stop-color="#706248"/>
+      <stop offset="100%" stop-color="#403828"/>
+    </radialGradient>
+    <radialGradient id="bevelC" cx="40%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#e4d8b8"/>
+      <stop offset="50%" stop-color="#b4a078"/>
+      <stop offset="100%" stop-color="#807050"/>
+    </radialGradient>
+    <radialGradient id="faceC" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#030303"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </radialGradient>
+    <clipPath id="clipC"><circle cx="256" cy="256" r="201"/></clipPath>
+  </defs>
+
+  <circle cx="256" cy="256" r="252" fill="url(#ringC)"/>
+  <circle cx="256" cy="256" r="221" fill="#605040"/>
+  <circle cx="256" cy="256" r="213" fill="url(#bevelC)"/>
+  <circle cx="256" cy="256" r="205" fill="#3a2e20"/>
+  <circle cx="256" cy="256" r="203" fill="url(#faceC)"/>
+
+  <g clip-path="url(#clipC)">
+    <!-- Outer green (letter body) -->
+    <path d="M 322,152
+             C 322,118  172,118  172,196
+             C 172,254  338,264  338,318
+             C 338,390  182,390  182,366"
+          fill="none"
+          stroke="#00c853"
+          stroke-width="84"
+          stroke-linecap="square"/>
+
+    <!-- Inner black cutout (makes it hollow / outlined) -->
+    <path d="M 322,152
+             C 322,118  172,118  172,196
+             C 172,254  338,264  338,318
+             C 338,390  182,390  182,366"
+          fill="none"
+          stroke="#000000"
+          stroke-width="42"
+          stroke-linecap="butt"/>
+  </g>
+</svg>

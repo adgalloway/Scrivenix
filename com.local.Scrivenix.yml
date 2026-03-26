@@ -1,0 +1,132 @@
+app-id: com.local.Scrivenix
+base: org.winehq.Wine
+base-version: stable-23.08
+runtime: org.freedesktop.Platform
+runtime-version: '23.08'
+sdk: org.freedesktop.Sdk
+command: scrivenix-wrapper
+
+# ---------------------------------------------------------------------------
+# 32-bit support — REQUIRED for Scrivener license activation.
+#
+# Scrivener's licensing system (Paddle) uses a 32-bit binary (Paddle.exe).
+# Without the Compat.i386 extension, the 32-bit Wine loader crashes at
+# startup (missing i386-unix/ntdll.so) and license activation fails.
+#
+# inherit-extensions pulls in the extensions already declared by the
+# org.winehq.Wine base app so we don't have to re-declare them here.
+# ---------------------------------------------------------------------------
+inherit-extensions:
+  - org.freedesktop.Platform.GL32
+  - org.freedesktop.Platform.ffmpeg-full
+  - org.winehq.Wine.gecko
+  - org.winehq.Wine.mono
+
+# Declare the i386 compat extension point so Flatpak mounts the 32-bit
+# Linux userspace libraries (glibc, etc.) into /app/lib/i386-linux-gnu.
+# The version MUST match runtime-version above.
+add-extensions:
+  org.freedesktop.Platform.Compat.i386:
+    directory: lib/i386-linux-gnu
+    version: '23.08'
+
+  org.freedesktop.Platform.Compat.i386.Debug:
+    directory: lib/debug/lib/i386-linux-gnu
+    version: '23.08'
+    no-autodownload: true
+
+finish-args:
+  # Networking — needed to download Scrivener installer and for licence check
+  - --share=network
+  # IPC — required for Wine X11 shared memory
+  - --share=ipc
+  # X11 display
+  - --socket=x11
+  # Audio
+  - --socket=pulseaudio
+  # GPU / hardware acceleration
+  - --device=dri
+  # Full home access so Scrivener can read/write ~/Documents projects
+  - --filesystem=home
+  # devel required for Wine's ptrace calls
+  - --allow=devel
+  # 32-bit Wine compatibility — required for Paddle.exe license activation
+  - --allow=multiarch
+  # All devices (needed by some Wine components)
+  - --device=all
+  # Include both 64-bit and 32-bit library paths.
+  # /app/lib/i386-linux-gnu is the Compat.i386 extension mountpoint.
+  - --env=LD_LIBRARY_PATH=/app/lib:/app/lib32:/app/lib/i386-linux-gnu
+
+modules:
+
+  # ---------------------------------------------------------------------------
+  # Create the Compat.i386 extension mountpoint directory.
+  # Flatpak requires this directory to exist inside the app before it will
+  # mount the i386 extension into it at runtime.
+  # ---------------------------------------------------------------------------
+  - name: compat-i386-mountpoint
+    buildsystem: simple
+    build-commands:
+      - mkdir -p /app/lib/i386-linux-gnu
+      - mkdir -p /app/lib/debug/lib/i386-linux-gnu
+
+  # ---------------------------------------------------------------------------
+  # cabextract — required by winetricks to unpack Windows cabinet archives
+  # ---------------------------------------------------------------------------
+  - name: cabextract
+    buildsystem: autotools
+    config-opts:
+      - --prefix=/app
+    sources:
+      - type: archive
+        url: https://www.cabextract.org.uk/cabextract-1.11.tar.gz
+        sha256: b5546db1155e4c718ff3d4b278573604f30dd64c3c5bfd4657cd089b823a3ac6
+
+  # ---------------------------------------------------------------------------
+  # winetricks — pinned local file to avoid SHA256 drift from master branch.
+  #
+  # To update winetricks in future:
+  #   curl -Lo winetricks \
+  #     https://github.com/Winetricks/winetricks/releases/download/20240105/winetricks
+  #   chmod +x winetricks
+  # Then rebuild.
+  # ---------------------------------------------------------------------------
+  - name: winetricks
+    buildsystem: simple
+    build-commands:
+      - install -Dm755 winetricks /app/bin/winetricks
+    sources:
+      - type: file
+        path: winetricks
+
+  # ---------------------------------------------------------------------------
+  # Scrivenix application files
+  # ---------------------------------------------------------------------------
+  - name: scrivenix-app
+    buildsystem: simple
+    build-commands:
+      # Main launcher script
+      - install -Dm755 scrivenix-wrapper.sh /app/bin/scrivenix-wrapper
+
+      # Desktop integration
+      - install -Dm644 com.local.Scrivenix.desktop
+          /app/share/applications/com.local.Scrivenix.desktop
+
+      # AppStream metadata (shown in GNOME Software, KDE Discover, etc.)
+      - install -Dm644 com.local.Scrivenix.metainfo.xml
+          /app/share/metainfo/com.local.Scrivenix.metainfo.xml
+
+      # App icon — 256x256 PNG named com.local.Scrivenix.png
+      - install -Dm644 com.local.Scrivenix.svg
+          /app/share/icons/hicolor/scalable/apps/com.local.Scrivenix.svg
+
+    sources:
+      - type: file
+        path: scrivenix-wrapper.sh
+      - type: file
+        path: com.local.Scrivenix.desktop
+      - type: file
+        path: com.local.Scrivenix.metainfo.xml
+      - type: file
+        path: com.local.Scrivenix.svg

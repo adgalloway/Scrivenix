@@ -1,0 +1,274 @@
+====================================================
+ SCRIVENIX — BETA TESTER INSTALLATION INSTRUCTIONS
+====================================================
+
+Thank you for helping test Scrivenix! This document will walk you
+through everything you need to get it running on your Linux machine.
+
+Scrivenix is a Flatpak application that automatically installs and
+runs Scrivener 3 for Windows on Linux via Wine. You will need a
+valid Scrivener 3 for Windows license to complete setup and test
+license activation.
+
+Estimated time: 20–30 minutes depending on your internet connection.
+
+----------------------------------------------------
+ WHAT'S IN THIS FOLDER
+----------------------------------------------------
+
+  com.local.Scrivenix.yml          — Flatpak build manifest
+  scrivenix-wrapper.sh             — Main launcher script
+  com.local.Scrivenix.desktop      — App menu / desktop integration
+  com.local.Scrivenix.metainfo.xml — App metadata
+  com.local.Scrivenix.svg          — App icon
+  winetricks                       — Windows compatibility helper
+  INSTALL.txt                      — This file
+
+----------------------------------------------------
+ STEP 1 — INSTALL FLATPAK AND FLATPAK-BUILDER
+----------------------------------------------------
+
+Scrivenix requires both Flatpak and flatpak-builder. Most modern
+distros already have Flatpak, but flatpak-builder is a separate
+developer tool that is rarely installed by default.
+
+To check what you already have, open a terminal and run:
+
+  flatpak --version
+  flatpak-builder --version
+
+If both return version numbers, skip to Step 2.
+
+If either returns "command not found", install both for your distro:
+
+  Debian / Ubuntu / Linux Mint:
+    sudo apt install flatpak flatpak-builder
+
+  Fedora:
+    sudo dnf install flatpak flatpak-builder
+
+  Arch:
+    sudo pacman -S flatpak flatpak-builder
+
+After installing, restart your terminal before continuing.
+
+----------------------------------------------------
+ STEP 2 — ADD FLATHUB AND INSTALL REQUIRED RUNTIMES
+----------------------------------------------------
+
+Run each of these commands one at a time. When prompted
+"Which do you want to use?" always choose the option that
+says "user". When asked "Proceed with these changes to the
+user installation? [Y/n]" type y and press Enter.
+
+The end-of-life warnings you may see are harmless — ignore them.
+
+  flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+
+  flatpak install --user flathub org.freedesktop.Platform//23.08
+
+  flatpak install --user flathub org.freedesktop.Sdk//23.08
+
+  flatpak install --user flathub org.winehq.Wine//stable-23.08
+
+  flatpak install --user flathub org.freedesktop.Platform.Compat.i386//23.08
+
+Note: These are large downloads (roughly 1.5 GB total). Make sure
+you are on a reliable internet connection before starting.
+
+----------------------------------------------------
+ STEP 3 — BUILD AND INSTALL SCRIVENIX
+----------------------------------------------------
+
+Open a terminal and navigate to the folder containing these files.
+For example, if you copied the folder to your Documents:
+
+  cd ~/Documents/Scrivenix
+
+Then run:
+
+  flatpak-builder --force-clean --install --user build-dir com.local.Scrivenix.yml
+
+This will take a few minutes. You will see a lot of build output
+scroll past — this is normal. Wait for it to complete and return
+you to the terminal prompt.
+
+If the build succeeds you will see a line near the end that reads:
+  Installing app/com.local.Scrivenix/x86_64/master
+(the last line will often be "Pruning cache")
+
+----------------------------------------------------
+ STEP 4 — LAUNCH SCRIVENIX
+----------------------------------------------------
+
+You can launch Scrivenix from your application menu like any other
+app, or from the terminal:
+
+  flatpak run com.local.Scrivenix
+
+A welcome dialog will appear and guide you through the automated
+setup process. The setup window stays open and updates as each
+step progresses — you do not need to do anything until the Windows
+installer dialogs appear.
+
+The setup includes:
+
+  Steps 1–3: Installing Windows font and compatibility components
+             (automatic, no input needed)
+
+  Step 4:    Installing .NET 4.8
+             A Windows installer dialog will appear on top of the
+             setup window. Follow the prompts and click Install,
+             then Finish.
+
+             NOTE: After you click Finish, .NET continues running
+             background tasks for several minutes. The setup window
+             will show "Waiting for .NET to finish..." — this is
+             normal. Please do not close any windows or restart
+             your computer during this time.
+
+             NOTE: You may see a Windows warning that says:
+             "Windows Module Installer Service is not available"
+             This is harmless — click Continue to proceed.
+
+  Steps 5–6: Automatic configuration (no input needed)
+
+  Step 7:    Installing Scrivener 3
+             A Windows installer dialog will appear. Follow the
+             prompts and click Next / Install, then Finish.
+
+  Step 8:    Final configuration (automatic, no input needed)
+
+After setup completes you will be asked if you want to adjust
+display scaling before Scrivener launches. See the DISPLAY
+SCALING section below for guidance.
+
+The entire setup takes 20–30 minutes on a typical connection.
+
+----------------------------------------------------
+ STEP 5 — ACTIVATE YOUR LICENSE
+----------------------------------------------------
+
+When Scrivener opens, enter your license information when prompted or later go to:
+  Help > Enter License
+
+Enter your Scrivener 3 for Windows license details and click
+Activate. License activation requires an internet connection.
+
+
+----------------------------------------------------
+ DISPLAY SCALING
+----------------------------------------------------
+
+After setup completes, Scrivenix will ask if you want to adjust
+display scaling. If Scrivener's menus, toolbar, and sidebar
+appear too small on your screen, click "Open Display Settings"
+and follow these steps in the Wine Configuration window:
+
+  1. Click the Graphics tab
+  2. Increase the DPI value (144 is a good starting point)
+  3. Click Apply, then OK
+
+You can adjust this at any time by right-clicking the Scrivenix
+icon in your application menu and choosing "Display & Font Settings".
+
+Note for Linux Mint / Cinnamon users: the right-click menu option
+may not appear in Cinnamon. If so, open a terminal and run:
+  flatpak run --command=wine64 com.local.Scrivenix winecfg
+Then go to the Graphics tab.
+
+----------------------------------------------------
+ CLOUD STORAGE & SCRIVENER PROJECTS
+----------------------------------------------------
+
+If you store Scrivener projects in Dropbox, Google Drive,
+OneDrive, or another cloud sync folder, you can access them
+directly from within Scrivener by navigating to your sync
+folder location using Scrivener's file browser.
+
+Your home directory is fully accessible from within Scrivener.
+For example, if your Dropbox folder is at ~/Dropbox, you can
+open projects from there just as you would on Windows or Mac.
+
+Cloud storage configuration is not automated by Scrivenix and
+should be set up manually based on whichever service you use.
+
+----------------------------------------------------
+ KNOWN ISSUES
+----------------------------------------------------
+
+Cinnamon + Wayland: If you are running Linux Mint or another
+Cinnamon-based desktop under a Wayland session, the Shift, Ctrl,
+and Alt keys will not work correctly in Scrivener. This is a
+known bug in Cinnamon's Wayland implementation and cannot be
+fixed at the application level. The fix is to log out and select
+a Cinnamon (X11) session from your login screen instead.
+
+To check if this applies to you, run:
+  echo $XDG_CURRENT_DESKTOP $WAYLAND_DISPLAY
+If the output contains both "Cinnamon" and a display value,
+you are affected. If WAYLAND_DISPLAY is blank, you are on X11
+and this does not apply to you.
+
+----------------------------------------------------
+ THINGS TO NOTE WHILE TESTING
+----------------------------------------------------
+
+Please make a note of anything that doesn't work as expected
+or looks different from normal, including:
+
+  - Any error messages during setup
+  - Whether license activation succeeds or fails
+  - How fonts and text look inside Scrivener
+  - Whether Scrivener projects in your ~/Documents folder
+    are accessible from within Scrivener
+  - How display scaling looks at the default DPI and after
+    adjusting it in the Display & Font Settings
+  - Your Linux distro name and version
+    (find it by running: cat /etc/os-release)
+  - Whether you are running X11 or Wayland
+    (find it by running: echo $XDG_SESSION_TYPE)
+  - Whether you are on a desktop or laptop
+  - Your screen resolution and any HiDPI / fractional scaling
+    settings you may have active
+
+----------------------------------------------------
+ IF SOMETHING GOES WRONG
+----------------------------------------------------
+
+If setup fails or Scrivener does not launch correctly, you can
+wipe everything and start fresh with these commands:
+
+  flatpak uninstall com.local.Scrivenix -y
+  rm -rf ~/.var/app/com.local.Scrivenix
+
+Then run Step 4 again.
+
+If you hit an error you can't get past, please copy the full
+terminal output and send it along with your distro details.
+You can also open a GitHub issue at:
+
+  https://github.com/adgalloway/Scrivenix
+
+and paste the terminal output there — this helps track patterns
+across different distros and machines.
+
+----------------------------------------------------
+ AFTER FIRST LAUNCH — LAUNCHING IN FUTURE
+----------------------------------------------------
+
+After the first-run setup completes, launch Scrivenix from your
+application menu like any other app, or run:
+
+  flatpak run com.local.Scrivenix
+
+----------------------------------------------------
+ THANK YOU
+----------------------------------------------------
+
+Your feedback is genuinely valuable. Even "everything worked
+perfectly on Distro X" is useful information. Please report
+your results — positive or negative — on the GitHub repository
+or in the Literature & Latte forum thread where you found this.
+
+====================================================
