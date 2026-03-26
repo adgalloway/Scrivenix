@@ -139,13 +139,21 @@ rm -rf ~/.var/app/com.local.Scrivenix
 
 ## Starting Fresh
 
-If setup fails or you want a completely clean reinstall:
+If setup fails or you want a completely clean reinstall, run all of
+these commands from your Scrivenix project directory:
 
 ```bash
 flatpak uninstall com.local.Scrivenix -y
 rm -rf ~/.var/app/com.local.Scrivenix
+rm -rf build-dir .flatpak-builder repo
+flatpak-builder --force-clean --install --user build-dir com.local.Scrivenix.yml
 flatpak run com.local.Scrivenix
 ```
+
+The first two commands wipe the installed app and all Wine/Scrivener
+data. The third removes the build artifacts. The fourth rebuilds and
+reinstalls Scrivenix from scratch. The fifth launches it to begin
+the setup wizard again.
 
 ---
 
