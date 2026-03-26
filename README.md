@@ -79,6 +79,14 @@ flatpak install --user flathub org.freedesktop.Platform.Compat.i386//23.08
 
 ### Step 3 — Download and build Scrivenix
 
+If you have Git installed:
+
+```bash
+git pull https://github.com/adgalloway/Scrivenix.git
+```
+
+OTHERWISE
+
 Download this repository as a ZIP file (click the green **Code** button → **Download ZIP**), extract it, open a terminal in the extracted folder, and run:
 
 ```bash
