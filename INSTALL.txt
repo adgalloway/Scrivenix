@@ -177,7 +177,7 @@ icon in your application menu and choosing "Display & Font Settings".
 
 Note for Linux Mint / Cinnamon users: the right-click menu option
 may not appear in Cinnamon. If so, open a terminal and run:
-  flatpak run --command=wine64 com.local.Scrivenix winecfg
+  flatpak run com.local.Scrivenix --winecfg
 Then go to the Graphics tab.
 
 ----------------------------------------------------
