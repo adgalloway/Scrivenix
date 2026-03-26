@@ -149,12 +149,15 @@ The entire setup takes 20–30 minutes on a typical connection.
  STEP 5 — ACTIVATE YOUR LICENSE
 ----------------------------------------------------
 
-When Scrivener opens, enter your license information when prompted or later go to:
+When Scrivener opens, go to:
   Help > Enter License
 
 Enter your Scrivener 3 for Windows license details and click
 Activate. License activation requires an internet connection.
 
+Note: If you need to type an @ symbol in the activation dialog
+and it isn't working, type your email address in a text editor
+first and paste it into the field.
 
 ----------------------------------------------------
  DISPLAY SCALING
@@ -237,12 +240,17 @@ or looks different from normal, including:
 ----------------------------------------------------
 
 If setup fails or Scrivener does not launch correctly, you can
-wipe everything and start fresh with these commands:
+wipe everything and start fresh. Run all of these commands from
+inside your Scrivenix project directory:
 
   flatpak uninstall com.local.Scrivenix -y
   rm -rf ~/.var/app/com.local.Scrivenix
+  rm -rf build-dir .flatpak-builder repo
+  flatpak-builder --force-clean --install --user build-dir com.local.Scrivenix.yml
 
-Then run Step 4 again.
+Then launch Scrivenix again from your application menu or run:
+
+  flatpak run com.local.Scrivenix
 
 If you hit an error you can't get past, please copy the full
 terminal output and send it along with your distro details.
