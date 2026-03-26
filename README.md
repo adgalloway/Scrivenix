@@ -113,7 +113,7 @@ In the Wine Configuration window, go to the **Graphics** tab and increase the DP
 
 > **Cinnamon users:** The right-click menu option may not appear in Cinnamon. If so, run:
 > ```bash
-> flatpak run --command=wine64 com.local.Scrivenix winecfg
+> flatpak run com.local.Scrivenix --winecfg
 > ```
 
 ---
