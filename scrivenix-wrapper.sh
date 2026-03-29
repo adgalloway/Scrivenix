@@ -235,11 +235,55 @@ if [ ! -f "$SETUP_DONE_FLAG" ]; then
     # binary) throws "Object reference not set to an instance of an object"
     # and activation fails silently.
     #
-    # The progress window stays open — the .NET installer will appear on top
-    # of it. Instructions and the harmless warning notice are shown in the
-    # progress text so the user knows what to expect before it appears.
-    setup_progress_update 23 "Step 4 of 8: Installing .NET 4.8...\n\nThis is the longest step — it typically takes 5–10 minutes.\nPlease be patient and do not close any windows.\n\nThe Windows installer is loading and will appear on top\nof this window in 30–60 seconds.\n\nIMPORTANT: You may see a warning that says:\n\"Windows Module Installer Service is not available\"\nThis is harmless — click Continue to proceed normally.\n\nWhen the installer appears:\n  → Click Install (or Continue past the warning first)\n  → Wait for installation to complete\n  → Click Finish"
-    winetricks --force dotnet48 2>/dev/null
+    # After installation we verify the registry key was written correctly.
+    # If verification fails we attempt one automatic retry before warning
+    # the user. This makes the setup self-healing for interrupted installs.
+    #
+    # mscorsvw.exe (.NET Native Image Generator) is explicitly killed after
+    # installation. In Wine it can run indefinitely, blocking wineserver -w.
+    # It is safe to terminate — Scrivener does not need pre-compiled images.
+    #
+    # .NET 4.8 release registry value: 528040 (0x80EA8)
+    # Any value >= 528040 confirms a successful dotnet48 installation.
+    #
+    # The progress window stays open — the .NET installer will appear on top.
+
+    install_dotnet() {
+        setup_progress_update 23 "Step 4 of 8: Installing .NET 4.8...\n\nThis is the longest step — it typically takes 5–10 minutes.\nPlease be patient and do not close any windows.\n\nThe Windows installer is loading and will appear on top\nof this window in 30–60 seconds.\n\nIMPORTANT: You may see a warning that says:\n\"Windows Module Installer Service is not available\"\nThis is harmless — click Continue to proceed normally.\n\nWhen the installer appears:\n  → Click Install (or Continue past the warning first)\n  → Wait for installation to complete\n  → Click Finish"
+        winetricks --force dotnet48 2>/dev/null
+
+        # Kill mscorsvw.exe (.NET Native Image Generator) if still running.
+        # This process compiles .NET assemblies to native code after installation
+        # and can run for an extremely long time in Wine — sometimes indefinitely.
+        # It is safe to terminate: it is a background optimiser and Scrivener
+        # does not require pre-compiled native images to run or activate.
+        setup_progress_update 38 "Step 4 of 8: Finalising .NET installation...\n\nTerminating background optimiser (mscorsvw.exe).\nThis is safe and expected. Please wait."
+        wine64 taskkill /f /im mscorsvw.exe >/dev/null 2>&1 || true
+        wine64 taskkill /f /im mscorsvc.exe >/dev/null 2>&1 || true
+    }
+
+    verify_dotnet() {
+        local RELEASE
+        RELEASE=$(wine64 reg query             "HKLM\\Software\\Microsoft\\NET Framework Setup\\NDP\\v4\\Full"             /v Release 2>/dev/null | grep -i "Release" | awk '{print $NF}')
+        # Convert hex (0x80EA8) to decimal
+        RELEASE=$(printf "%d" "$RELEASE" 2>/dev/null || echo 0)
+        [ "$RELEASE" -ge 528040 ] 2>/dev/null
+    }
+
+    # First installation attempt
+    install_dotnet
+
+    # Verify — if failed, wait for wineserver to settle and retry once
+    if ! verify_dotnet; then
+        setup_progress_update 40 "Step 4 of 8: Verifying .NET installation...\n\nFirst attempt did not complete successfully.\nWaiting for Wine to settle before retrying.\nPlease wait — this may take a few minutes."
+        wineserver -w 2>/dev/null
+        setup_progress_update 42 "Step 4 of 8: Retrying .NET installation...\n\nRunning a second installation attempt.\nPlease follow the Windows installer prompts again if they appear."
+        install_dotnet
+        if ! verify_dotnet; then
+            setup_progress_close
+            error_exit ".NET 4.8 installation could not be verified.\n\nPlease wipe and retry using the clean reinstall commands in INSTALL.txt.\n\nIf this error persists, please report it at:\nhttps://github.com/adgalloway/Scrivenix/issues"
+        fi
+    fi
 
     # Step 5 — Wait for .NET background work to finish, then set Windows 10 mode
     # Required for Paddle.exe to communicate with the Scrivener license server.
