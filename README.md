@@ -13,8 +13,6 @@ Scrivenix is a Flatpak application that automatically downloads, installs, and l
 **Beta** — Confirmed working on:
 - Fedora (Wayland / GNOME)
 - Linux Mint (X11 / Cinnamon)
-- Linux Mint Debian Edition 7 (X11 / Cinnamon)
-- Debian (Wayland / GNOME)
 
 Testing on additional distributions is ongoing. See [Known Issues](#known-issues) before installing.
 
@@ -65,29 +63,23 @@ sudo pacman -S flatpak flatpak-builder
 
 Run each command one at a time. Choose **user** when asked which installation to use.
 
+Scrivenix uses the freedesktop 24.08 runtime, which is a current supported release. You should not see any end-of-life warnings during this step.
+
 ```bash
 flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 
-flatpak install --user flathub org.freedesktop.Platform//23.08
+flatpak install --user flathub org.freedesktop.Platform//24.08
 
-flatpak install --user flathub org.freedesktop.Sdk//23.08
+flatpak install --user flathub org.freedesktop.Sdk//24.08
 
-flatpak install --user flathub org.winehq.Wine//stable-23.08
+flatpak install --user flathub org.winehq.Wine//stable-24.08
 
-flatpak install --user flathub org.freedesktop.Platform.Compat.i386//23.08
+flatpak install --user flathub org.freedesktop.Platform.Compat.i386//24.08
 ```
 
-> The end-of-life warnings you may see for the 23.08 runtime are harmless — ignore them. Total download is approximately 1.5 GB.
+> Total download is approximately 1.5 GB.
 
 ### Step 3 — Download and build Scrivenix
-
-If you have Git installed:
-
-```bash
-git pull https://github.com/adgalloway/Scrivenix.git
-```
-
-OTHERWISE
 
 Download this repository as a ZIP file (click the green **Code** button → **Download ZIP**), extract it, open a terminal in the extracted folder, and run:
 
@@ -115,7 +107,7 @@ In the Wine Configuration window, go to the **Graphics** tab and increase the DP
 
 > **Cinnamon users:** The right-click menu option may not appear in Cinnamon. If so, run:
 > ```bash
-> flatpak run com.local.Scrivenix --winecfg
+> flatpak run --command=wine64 com.local.Scrivenix winecfg
 > ```
 
 ---
@@ -135,6 +127,8 @@ To check whether this affects you:
 echo $XDG_CURRENT_DESKTOP $WAYLAND_DISPLAY
 ```
 If the output contains both `Cinnamon` and a display value, switch to an X11 session. If `WAYLAND_DISPLAY` is blank, you are already on X11 and this does not apply.
+
+**Silent exit after setup:** If Scrivener exits immediately and silently the first time it launches after setup completes, this can be caused by a Wine prefix that was built with an older version of Wine becoming incompatible with the current runtime. Use the clean reinstall commands in [Starting Fresh](#starting-fresh) to resolve it.
 
 ---
 
