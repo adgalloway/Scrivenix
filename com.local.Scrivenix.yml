@@ -1,8 +1,8 @@
 app-id: com.local.Scrivenix
 base: org.winehq.Wine
-base-version: stable-23.08
+base-version: stable-24.08
 runtime: org.freedesktop.Platform
-runtime-version: '23.08'
+runtime-version: '24.08'
 sdk: org.freedesktop.Sdk
 command: scrivenix-wrapper
 
@@ -28,11 +28,11 @@ inherit-extensions:
 add-extensions:
   org.freedesktop.Platform.Compat.i386:
     directory: lib/i386-linux-gnu
-    version: '23.08'
+    version: '24.08'
 
   org.freedesktop.Platform.Compat.i386.Debug:
     directory: lib/debug/lib/i386-linux-gnu
-    version: '23.08'
+    version: '24.08'
     no-autodownload: true
 
 finish-args:
