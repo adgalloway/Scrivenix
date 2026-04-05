@@ -61,17 +61,19 @@ Run each of these commands one at a time. When prompted
 says "user". When asked "Proceed with these changes to the
 user installation? [Y/n]" type y and press Enter.
 
-The end-of-life warnings you may see are harmless — ignore them.
+Scrivenix uses the freedesktop 24.08 runtime, which is a current
+supported release. You should not see any end-of-life warnings
+during this step.
 
   flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 
-  flatpak install --user flathub org.freedesktop.Platform//23.08
+  flatpak install --user flathub org.freedesktop.Platform//24.08
 
-  flatpak install --user flathub org.freedesktop.Sdk//23.08
+  flatpak install --user flathub org.freedesktop.Sdk//24.08
 
-  flatpak install --user flathub org.winehq.Wine//stable-23.08
+  flatpak install --user flathub org.winehq.Wine//stable-24.08
 
-  flatpak install --user flathub org.freedesktop.Platform.Compat.i386//23.08
+  flatpak install --user flathub org.freedesktop.Platform.Compat.i386//24.08
 
 Note: These are large downloads (roughly 1.5 GB total). Make sure
 you are on a reliable internet connection before starting.
@@ -177,7 +179,7 @@ icon in your application menu and choosing "Display & Font Settings".
 
 Note for Linux Mint / Cinnamon users: the right-click menu option
 may not appear in Cinnamon. If so, open a terminal and run:
-  flatpak run com.local.Scrivenix --winecfg
+  flatpak run --command=wine64 com.local.Scrivenix winecfg
 Then go to the Graphics tab.
 
 ----------------------------------------------------
@@ -212,6 +214,13 @@ To check if this applies to you, run:
 If the output contains both "Cinnamon" and a display value,
 you are affected. If WAYLAND_DISPLAY is blank, you are on X11
 and this does not apply to you.
+
+Silent exit after setup: If Scrivener exits immediately and
+silently the first time it launches after setup completes, this
+can be caused by a Wine prefix that was built with an older
+version of Wine becoming incompatible with the current runtime.
+Use the clean reinstall commands in the IF SOMETHING GOES WRONG
+section below to resolve it.
 
 ----------------------------------------------------
  THINGS TO NOTE WHILE TESTING
