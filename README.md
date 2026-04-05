@@ -109,7 +109,10 @@ In the Wine Configuration window, go to the **Graphics** tab and increase the DP
 > ```bash
 > flatpak run --command=wine64 com.local.Scrivenix winecfg
 > ```
-
+OR if that fails try:
+> ```bash
+> flatpak run com.local.Scrivenix --winecfg
+> ```
 ---
 
 ## Cloud Storage
