@@ -14,14 +14,31 @@ export WINEDEBUG=-all
 # and the wineboot wrapper — to use wine64 by setting these three variables.
 # The Compat.i386 extension declared in the manifest provides 32-bit libraries
 # for child processes like Paddle.exe (Scrivener's license activation binary).
+# Ensure /app/bin is on PATH so Wine binaries (wine, wine64, wineserver,
+# winetricks, cabextract) are always findable regardless of how the script
+# is invoked — e.g. via flatpak run --command=, desktop actions, or app drawer.
+export PATH="/app/bin:$PATH"
+
 export WINE=/app/bin/wine
-export WINELOADER=/app/bin/wine64
+# Wine 11 (shipped with the 24.08 runtime) unified wine and wine64 into a
+# single binary under the new WoW64 architecture. /app/bin/wine64 no longer
+# exists as a static file — it is only available as a wrapper set up by the
+# Wine Flatpak base entry script during a normal launch. When the script is
+# invoked via --command= (desktop actions, right-click menu), that entry
+# script is bypassed and wine64 is unavailable. Point WINELOADER at the
+# static /app/bin/wine binary, which handles 64-bit under Wine 11 WoW64.
+export WINELOADER=/app/bin/wine
 export WINESERVER=/app/bin/wineserver
 
 CACHE_DIR="$HOME/.var/app/com.local.Scrivenix/cache"
 SCRIV_EXE="$WINEPREFIX/drive_c/Program Files/Scrivener3/Scrivener.exe"
 SETUP_DONE_FLAG="$WINEPREFIX/.setup_done"
 SPEECH_DIR="$WINEPREFIX/drive_c/Program Files/Scrivener3/texttospeech"
+# winetricks writes this file on successful dotnet48 completion.
+# Used as the primary verification signal — more reliable than registry
+# queries under Wine's WoW64 mode (Wine 11+), where the 64-bit registry
+# view used by wine64 reg query may not reflect what the installer wrote.
+DOTNET_WORKAROUND_FLAG="$WINEPREFIX/dosdevices/c:/windows/dotnet48.installed.workaround"
 
 # --- HELPERS -----------------------------------------------------------------
 
@@ -148,7 +165,7 @@ configure_fonts() {
 # the reliable cross-distro method for adjusting Scrivener's UI size.
 
 launch_winecfg() {
-    wine64 winecfg
+    "$WINELOADER" winecfg
 }
 
 # --- ARGUMENT HANDLING -------------------------------------------------------
@@ -175,7 +192,7 @@ if [ -n "$WAYLAND_DISPLAY" ]; then
     if echo "$CURRENT_DE" | grep -qi "cinnamon"; then
         zenity --warning \
             --title="Scrivenix — Keyboard Warning" \
-            --text="You are running Cinnamon under Wayland.\n\nShift, Ctrl, and Alt keys do not work correctly in Wine applications under Cinnamon's Wayland compositor. This means you will not be able to type capital letters or use keyboard shortcuts in Scrivener.\n\nTo fix this:\n  1. Log out\n  2. On the login screen, click the session selector\n  3. Choose \"Cinnamon\" (the X11 version, not Wayland)\n  4. Log back in and relaunch Scrivenix\n\nNote for Cinnamon users: The right-click \"Display &amp; Font Settings\" menu item may not appear in Cinnamon. To adjust display scaling, open a terminal and run:\n  flatpak run --command=wine64 com.local.Scrivenix winecfg\nThen go to the Graphics tab.\n\nScrivener will still launch, but keyboard input will be limited until you switch to an X11 session." \
+            --text="You are running Cinnamon under Wayland.\n\nShift, Ctrl, and Alt keys do not work correctly in Wine applications under Cinnamon's Wayland compositor. This means you will not be able to type capital letters or use keyboard shortcuts in Scrivener.\n\nTo fix this:\n  1. Log out\n  2. On the login screen, click the session selector\n  3. Choose \"Cinnamon\" (the X11 version, not Wayland)\n  4. Log back in and relaunch Scrivenix\n\nNote for Cinnamon users: The right-click \"Display &amp; Font Settings\" menu item may not appear in Cinnamon. To adjust display scaling, open a terminal and run:\n  flatpak run --command=scrivenix-wrapper com.local.Scrivenix --winecfg\nThen go to the Graphics tab.\n\nScrivener will still launch, but keyboard input will be limited until you switch to an X11 session." \
             --width=500 \
             2>/dev/null
     fi
@@ -246,6 +263,16 @@ if [ ! -f "$SETUP_DONE_FLAG" ]; then
     # .NET 4.8 release registry value: 528040 (0x80EA8)
     # Any value >= 528040 confirms a successful dotnet48 installation.
     #
+    # WINE 11 / WoW64 NOTE: Wine 11 (shipped with the 24.08 runtime) introduced
+    # experimental WoW64 mode. Under WoW64, wine64 reg query reads the 64-bit
+    # registry view, which may not reflect the location the .NET installer wrote
+    # to. As a result the registry check alone is unreliable on Wine 11+.
+    #
+    # Primary check: winetricks workaround flag file. winetricks creates this
+    # file (dotnet48.installed.workaround) only after a successful dotnet48
+    # install. It is the most reliable cross-Wine-version signal available.
+    # Registry query is retained as a secondary check for older Wine versions.
+    #
     # The progress window stays open — the .NET installer will appear on top.
 
     install_dotnet() {
@@ -263,9 +290,16 @@ if [ ! -f "$SETUP_DONE_FLAG" ]; then
     }
 
     verify_dotnet() {
+        # Primary: winetricks workaround flag file — reliable under Wine 11+ WoW64
+        if [ -f "$DOTNET_WORKAROUND_FLAG" ]; then
+            return 0
+        fi
+        # Fallback: registry query — reliable on Wine 9/10, may fail on Wine 11+
+        # WoW64 mode due to registry view differences between 32-bit and 64-bit.
         local RELEASE
-        RELEASE=$(wine64 reg query             "HKLM\\Software\\Microsoft\\NET Framework Setup\\NDP\\v4\\Full"             /v Release 2>/dev/null | grep -i "Release" | awk '{print $NF}')
-        # Convert hex (0x80EA8) to decimal
+        RELEASE=$(wine64 reg query \
+            "HKLM\\Software\\Microsoft\\NET Framework Setup\\NDP\\v4\\Full" \
+            /v Release 2>/dev/null | grep -i "Release" | awk '{print $NF}')
         RELEASE=$(printf "%d" "$RELEASE" 2>/dev/null || echo 0)
         [ "$RELEASE" -ge 528040 ] 2>/dev/null
     }
@@ -351,7 +385,7 @@ if [ ! -f "$SETUP_DONE_FLAG" ]; then
         --ok-label="Open Display Settings" \
         --cancel-label="Skip — Launch Scrivener Now" \
         --width=500 \
-        2>/dev/null && wine64 winecfg
+        2>/dev/null && "$WINELOADER" winecfg
 
 fi
 
@@ -367,4 +401,5 @@ remove_speech_to_text
 # FREETYPE_PROPERTIES: use the older TrueType interpreter (v35) for better
 # hinting at small sizes than the newer CFF-focused v40 engine.
 exec env FREETYPE_PROPERTIES="truetype:interpreter-version=35" \
+    WINEDLLOVERRIDES="cryptbase=b" \
     wine "$SCRIV_EXE" 2>/dev/null
