@@ -123,6 +123,10 @@ The setup includes:
              setup window. Follow the prompts and click Install,
              then Finish.
 
+             NOTE: You will actually transact two installs. The first
+             is .NET 4 and the second is .NET 4.8. The second will
+             trigger a harmless warning.
+             
              NOTE: After you click Finish, .NET continues running
              background tasks for several minutes. The setup window
              will show "Waiting for .NET to finish..." — this is
@@ -131,7 +135,8 @@ The setup includes:
 
              NOTE: You may see a Windows warning that says:
              "Windows Module Installer Service is not available"
-             This is harmless — click Continue to proceed.
+             This is harmless — click Continue to proceed. 
+             (HAPPENS ON THE SECOND INSTALLER)
 
   Steps 5–6: Automatic configuration (no input needed)
 
@@ -159,29 +164,36 @@ Activate. License activation requires an internet connection.
 
 Note: If you need to type an @ symbol in the activation dialog
 and it isn't working, type your email address in a text editor
-first and paste it into the field.
+first and paste it into the field. See known issues regarding
+Cinnamon/Wayland in the known issues section below.
 
 ----------------------------------------------------
- DISPLAY SCALING
+ DISPLAY SCALING & WINDOWS VERSION
 ----------------------------------------------------
 
 After setup completes, Scrivenix will ask if you want to adjust
-display scaling. If Scrivener's menus, toolbar, and sidebar
-appear too small on your screen, click "Open Display Settings"
+display scaling. Click "Open Display Settings"
 and follow these steps in the Wine Configuration window:
 
   1. Click the Graphics tab
   2. Increase the DPI value (144 is a good starting point)
   3. Click Apply, then OK
 
-You can adjust this at any time by right-clicking the Scrivenix
+In the same Wine Configuration window:
+
+  1. Click the Applications Tab
+  2. Near the bottom verify that Windows 10 or 11 is selected
+  3. If not, select Windows 10 or 11 from the drop down menu
+  4. Click Apply, then OK
+
+You can adjust these settings at any time by right-clicking the Scrivenix
 icon in your application menu and choosing "Display & Font Settings".
 
 Note for Linux Mint / Cinnamon users: the right-click menu option
 may not appear in Cinnamon. If so, open a terminal and run:
-  flatpak run --command=wine64 com.local.Scrivenix winecfg
-Then go to the Graphics tab.
 
+  flatpak run com.local.Scrivenix --winecfg
+  
 ----------------------------------------------------
  CLOUD STORAGE & SCRIVENER PROJECTS
 ----------------------------------------------------
