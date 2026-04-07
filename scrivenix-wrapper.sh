@@ -149,6 +149,9 @@ remove_speech_to_text() {
 # user via winecfg (Graphics tab) rather than programmatically, since
 # Wine reads DPI differently depending on the display backend (X11 vs
 # XWayland vs Wayland) and winecfg is the only reliable cross-distro method.
+#
+# Also callable on demand via --reconfigure-fonts to recover from a Scrivener
+# update or Wine runtime change that resets font rendering settings.
 
 configure_fonts() {
     winetricks fontsmooth=rgb >/dev/null 2>&1
@@ -173,6 +176,14 @@ launch_winecfg() {
 case "$1" in
     --winecfg)
         launch_winecfg
+        exit 0
+        ;;
+    --reconfigure-fonts)
+        # Re-applies ClearType font smoothing settings to the Wine prefix.
+        # Useful after a Scrivener update or Wine runtime change that resets
+        # font rendering. Does not affect DPI — adjust that via --winecfg.
+        configure_fonts
+        info "Font configuration has been re-applied.\n\nClearType font smoothing settings have been restored.\nRestart Scrivener for the changes to take effect."
         exit 0
         ;;
 esac
@@ -366,6 +377,12 @@ if [ ! -f "$SETUP_DONE_FLAG" ]; then
     setup_progress_update 88 "Step 8 of 8: Applying final configuration...\n\nRemoving texttospeech folder and configuring font\nrendering. Almost done — please wait."
     remove_speech_to_text
     configure_fonts
+
+    # Wait for all Wine processes from configure_fonts (winetricks, reg add) to
+    # exit cleanly. Without this, wineserver is still busy when the winecfg
+    # prompt fires immediately below, causing winecfg to deadlock on connection.
+    setup_progress_update 95 "Step 8 of 8: Finalising configuration...\n\nWaiting for Wine to settle. Almost done — please wait."
+    wineserver -w 2>/dev/null
 
     setup_progress_update 100 "Setup complete! Scrivener 3 is ready."
     sleep 2
