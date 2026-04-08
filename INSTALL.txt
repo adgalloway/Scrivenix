@@ -234,6 +234,19 @@ version of Wine becoming incompatible with the current runtime.
 Use the clean reinstall commands in the IF SOMETHING GOES WRONG
 section below to resolve it.
 
+Cinnamon Broken Desktop Icon: Desktop shortcut via "Add to Desktop" 
+(Cinnamon/XFCE): Right-clicking the Scrivenix app menu entry and 
+choosing "Add to Desktop" produces a broken shortcut on Cinnamon 
+and XFCE. This is a known Cinnamon/Nemo bug affecting all Flatpak 
+apps, not specific to Scrivenix. To create a working desktop shortcut 
+manually, run:
+
+~/.local/share/flatpak/exports/share/applications/com.local.Scrivenix.desktop ~/Desktop/
+chmod +x ~/Desktop/com.local.Scrivenix.desktop
+
+Right-click the resulting icon and choose Allow Launching if prompted. 
+The app menu shortcut is unaffected and works correctly.
+
 ----------------------------------------------------
  THINGS TO NOTE WHILE TESTING
 ----------------------------------------------------
