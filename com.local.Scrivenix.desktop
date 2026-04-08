@@ -2,22 +2,21 @@
 Name=Scrivenix
 GenericName=Writing Application
 Comment=Write Your Way — Scrivener 3 on Linux
-Exec=/usr/bin/flatpak run --branch=master --arch=x86_64 --command=scrivenix-wrapper com.local.Scrivenix
+Exec=scrivenix-wrapper
 Icon=com.local.Scrivenix
 Terminal=false
 Type=Application
 Categories=Office;WordProcessor;
 StartupWMClass=scrivener.exe
 Keywords=Writing;Novel;Manuscript;Scrivener;Screenwriting;
-Actions=Settings;ReconfigureFonts;
-X-Flatpak=com.local.Scrivenix
+Actions=DisplaySettings;ReconfigureFonts;
 
-[Desktop Action Settings]
-Name=Wrapper Settings (DPI / Font)
-Exec=/usr/bin/flatpak run --branch=master --arch=x86_64 --command=scrivenix-wrapper com.local.Scrivenix --settings
-Icon=preferences-system
+[Desktop Action DisplaySettings]
+Name=Display & Font Settings
+Exec=scrivenix-wrapper --winecfg
+Icon=preferences-desktop-display
 
 [Desktop Action ReconfigureFonts]
 Name=Re-apply Font Configuration
-Exec=/usr/bin/flatpak run --branch=master --arch=x86_64 --command=scrivenix-wrapper com.local.Scrivenix --reconfigure-fonts
+Exec=scrivenix-wrapper --reconfigure-fonts
 Icon=preferences-desktop-font
