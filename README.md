@@ -133,6 +133,13 @@ If the output contains both `Cinnamon` and a display value, switch to an X11 ses
 
 **Silent exit after setup:** If Scrivener exits immediately and silently the first time it launches after setup completes, this can be caused by a Wine prefix that was built with an older version of Wine becoming incompatible with the current runtime. Use the clean reinstall commands in [Starting Fresh](#starting-fresh) to resolve it.
 
+Desktop shortcut via "Add to Desktop" (Cinnamon/XFCE): Right-clicking the Scrivenix app menu entry and choosing "Add to Desktop" produces a broken shortcut on Cinnamon and XFCE. This is a known Cinnamon/Nemo bug affecting all Flatpak apps, not specific to Scrivenix. To create a working desktop shortcut manually, run:
+```bash
+~/.local/share/flatpak/exports/share/applications/com.local.Scrivenix.desktop ~/Desktop/
+chmod +x ~/Desktop/com.local.Scrivenix.desktop
+```
+Right-click the resulting icon and choose Allow Launching if prompted. The app menu shortcut is unaffected and works correctly.
+
 ---
 
 ## Uninstalling
