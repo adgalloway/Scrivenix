@@ -155,10 +155,10 @@ remove_speech_to_text() {
 
 configure_fonts() {
     winetricks fontsmooth=rgb >/dev/null 2>&1
-    wine64 reg add "HKCU\\Control Panel\\Desktop" /v FontSmoothing            /t REG_SZ    /d 2    /f >/dev/null 2>&1
-    wine64 reg add "HKCU\\Control Panel\\Desktop" /v FontSmoothingType        /t REG_DWORD /d 2    /f >/dev/null 2>&1
-    wine64 reg add "HKCU\\Control Panel\\Desktop" /v FontSmoothingGamma       /t REG_DWORD /d 1000 /f >/dev/null 2>&1
-    wine64 reg add "HKCU\\Control Panel\\Desktop" /v FontSmoothingOrientation /t REG_DWORD /d 1    /f >/dev/null 2>&1
+    "$WINELOADER" reg add "HKCU\\Control Panel\\Desktop" /v FontSmoothing            /t REG_SZ    /d 2    /f >/dev/null 2>&1
+    "$WINELOADER" reg add "HKCU\\Control Panel\\Desktop" /v FontSmoothingType        /t REG_DWORD /d 2    /f >/dev/null 2>&1
+    "$WINELOADER" reg add "HKCU\\Control Panel\\Desktop" /v FontSmoothingGamma       /t REG_DWORD /d 1000 /f >/dev/null 2>&1
+    "$WINELOADER" reg add "HKCU\\Control Panel\\Desktop" /v FontSmoothingOrientation /t REG_DWORD /d 1    /f >/dev/null 2>&1
 }
 
 # --- WINECFG LAUNCHER --------------------------------------------------------
@@ -402,7 +402,23 @@ if [ ! -f "$SETUP_DONE_FLAG" ]; then
         --ok-label="Open Display Settings" \
         --cancel-label="Skip — Launch Scrivener Now" \
         --width=500 \
-        2>/dev/null && "$WINELOADER" winecfg
+        2>/dev/null && {
+            # Kill any lingering wineserver before winecfg connects.
+            # After the wineserver -w above, the server process can still be in a
+            # brief shutdown state on Wine 11 WoW64. If winecfg tries to start
+            # while it is in that state it deadlocks, making Scrivenix appear hung.
+            # -k sends SIGKILL immediately; sleep 1 gives the process table time
+            # to clear before winecfg starts a clean new server instance.
+            wineserver -k 2>/dev/null
+            sleep 1
+            "$WINELOADER" winecfg
+            # Wait for winecfg's registry writes (DPI value) to be flushed to
+            # disk by wineserver before Scrivener reads the registry on launch.
+            # Without this, the DPI change is written in memory but not yet
+            # persisted, so Scrivener sees the old value and the change only
+            # takes effect on the second launch.
+            wineserver -w 2>/dev/null
+        }
 
 fi
 
