@@ -349,16 +349,78 @@ if [ ! -f "$SETUP_DONE_FLAG" ]; then
     wine64 reg add "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion" /v CSDVersion /t REG_SZ /d "" /f >/dev/null 2>&1
     wine64 reg add "HKCU\\Software\\Wine" /v Version /t REG_SZ /d "win10" /f >/dev/null 2>&1
 
-    # Step 6 — Download Scrivener (skip if already cached from a previous run)
-    if [ ! -f "$CACHE_DIR/scrivener-setup.exe" ]; then
-        setup_progress_update 60 "Step 6 of 8: Downloading Scrivener 3...\n\nDownloading the Scrivener installer (~175 MB).\nThis may take several minutes depending on your connection.\nPlease wait."
-        curl -L --silent \
-            "https://scrivener.s3.amazonaws.com/Scrivener-installer.exe" \
-            -o "$CACHE_DIR/scrivener-setup.exe" 2>/dev/null
-        if [ ! -f "$CACHE_DIR/scrivener-setup.exe" ]; then
-            setup_progress_close
-            error_exit "Scrivener download failed.\n\nCheck your internet connection and try again."
+    # Step 6 — Acquire Scrivener installer
+    # Acquisition order (first match wins):
+    #   1. Already cached from a previous run        → use it directly
+    #   2. Pre-staged by user in ~/Downloads         → copy to cache
+    #   3. Automatic download from Literature & Latte → cache it
+    #   4. Download failed → file picker dialog      → copy chosen file to cache
+    #
+    # A non-empty cached file persists across relaunches, so a failed partial
+    # download or an interrupted setup does not require repeating steps 1–5.
+    # -s tests for non-empty (-f alone would accept a 0-byte partial download).
+
+    SCRIV_DL_URL="https://scrivener.s3.amazonaws.com/Scrivener-installer.exe"
+    SCRIV_PRELOAD="$HOME/Downloads/Scrivener-installer.exe"
+
+    acquire_scrivener_installer() {
+        # 1. Valid cached file from a previous run or pre-staged copy
+        if [ -s "$CACHE_DIR/scrivener-setup.exe" ]; then
+            return 0
         fi
+
+        # 2. User pre-staged the installer in ~/Downloads before running setup
+        if [ -s "$SCRIV_PRELOAD" ]; then
+            setup_progress_update 62 "Step 6 of 8: Using pre-downloaded installer...\n\nFound Scrivener-installer.exe in ~/Downloads.\nCopying to cache. Please wait."
+            cp "$SCRIV_PRELOAD" "$CACHE_DIR/scrivener-setup.exe"
+            [ -s "$CACHE_DIR/scrivener-setup.exe" ] && return 0
+        fi
+
+        # 3. Automatic download
+        setup_progress_update 60 "Step 6 of 8: Downloading Scrivener 3...\n\nDownloading the Scrivener installer (~175 MB).\nThis may take several minutes depending on your connection.\nPlease wait."
+        rm -f "$CACHE_DIR/scrivener-setup.exe"
+        curl -L --silent \
+            "$SCRIV_DL_URL" \
+            -o "$CACHE_DIR/scrivener-setup.exe" 2>/dev/null
+
+        # Validate — curl can exit 0 but write an empty file or an HTML error page
+        if [ -s "$CACHE_DIR/scrivener-setup.exe" ]; then
+            return 0
+        fi
+
+        # 4. Download failed — offer a file picker so the user can locate a
+        #    manually downloaded copy. The progress window stays open in the
+        #    background; the file picker appears alongside it.
+        rm -f "$CACHE_DIR/scrivener-setup.exe"
+        setup_progress_update 60 "Step 6 of 8: Download failed — waiting for your input...\n\nA dialog has appeared asking you to locate the\nScrivener installer. Please respond to that dialog."
+
+        local MANUAL_PATH
+        MANUAL_PATH=$(zenity --file-selection \
+            --title="Scrivenix — Locate Scrivener Installer" \
+            --filename="$HOME/Downloads/" \
+            --file-filter="Windows Installer (*.exe) | *.exe" \
+            --file-filter="All files | *" \
+            2>/dev/null)
+
+        # User cancelled the file picker
+        if [ -z "$MANUAL_PATH" ]; then
+            return 1
+        fi
+
+        if [ ! -s "$MANUAL_PATH" ]; then
+            return 1
+        fi
+
+        setup_progress_update 62 "Step 6 of 8: Copying installer to cache...\n\nPlease wait."
+        cp "$MANUAL_PATH" "$CACHE_DIR/scrivener-setup.exe"
+        [ -s "$CACHE_DIR/scrivener-setup.exe" ] && return 0
+
+        return 1
+    }
+
+    if ! acquire_scrivener_installer; then
+        setup_progress_close
+        error_exit "The Scrivener installer could not be obtained.\n\nTo continue, download the installer manually:\n  https://www.literatureandlatte.com/scrivener/download\n\nThen relaunch Scrivenix — you will be prompted to\nlocate the file. Steps 1–5 will not repeat.\n\nAlternatively, save the downloaded file as:\n  ~/Downloads/Scrivener-installer.exe\nand relaunch — Scrivenix will find it automatically."
     fi
 
     # Step 7 — Scrivener installer
