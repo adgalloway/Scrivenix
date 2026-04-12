@@ -13,6 +13,11 @@ Scrivenix is a Flatpak application that automatically downloads, installs, and l
 **Beta** — Confirmed working on:
 - Fedora (Wayland / GNOME)
 - Linux Mint (X11 / Cinnamon)
+- Manjaro (Wayland / KDE)
+- PopOS (Wayland / Cosmic)
+- Debian (Wayland / Gnome)
+- Ubuntu 24.04 LTS (Waylaond / Gnome)
+- KDE Neon (Wayland / KDE)
 
 Testing on additional distributions is ongoing. See [Known Issues](#known-issues) before installing.
 
