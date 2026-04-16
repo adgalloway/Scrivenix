@@ -77,15 +77,13 @@ error_exit() {
 # The window is not dismissable — there is no OK/Cancel button.
 # Percentage values are weighted by approximate real-world install time:
 #
-#   3%  — Wine prefix init        (~1 min)
-#   8%  — Core Fonts              (~1-2 min)
-#  13%  — SAPI                    (~1-2 min)
-#  18%  — GDI+                    (~1-2 min)
-#  23%  — .NET 4.8 starting       (~5-10 min — dominates total time)
-#  55%  — .NET 4.8 complete
-#  58%  — Windows 10 mode         (~30 sec)
-#  75%  — Scrivener download      (~3-5 min)
-#  88%  — Scrivener installer     (~2-3 min)
+#   5%  — Wine prefix init        (~1 min)
+#  10%  — Core Fonts              (~1-2 min)
+#  15%  — .NET 4.8 starting       (~5-10 min — dominates total time)
+#  45%  — .NET 4.8 complete
+#  50%  — Windows 10 mode         (~30 sec)
+#  65%  — Scrivener download      (~3-5 min)
+#  85%  — Scrivener installer     (~2-3 min)
 #  95%  — Cleanup and fonts       (~1 min)
 # 100%  — Complete
 #
@@ -99,6 +97,7 @@ setup_progress_open() {
     # DISPLAY is set explicitly to ensure the window appears whether launched
     # from a terminal or an app drawer.
     exec 3> >(DISPLAY="${DISPLAY:-:0}" zenity --progress \
+        --auto-close \
         --no-cancel \
         --title="Scrivenix — First-Run Setup" \
         --text="Preparing..." \
@@ -130,12 +129,11 @@ setup_progress_close() {
 # --- SPEECH-TO-TEXT REMOVAL --------------------------------------------------
 # Scrivener enumerates SAPI/TTS voices during startup — even during the
 # "Loading Fonts" phase — and will hang indefinitely on a bare Wine prefix
-# if the texttospeech folder is present and no SAPI stub is available.
+# if the texttospeech folder is present.
 #
-# Two-layer fix (belt and suspenders):
-#   1. winetricks sapi  — installs a COM stub so the enumeration call returns
-#   2. Remove the folder — eliminates the code path entirely so a broken or
-#      missing SAPI stub can never re-trigger the hang after a Scrivener update
+# Removing the directory eliminates the code path entirely so Scrivener
+# bypasses the enumeration, allowing a smooth launch without needing
+# the heavy Windows Speech API winetricks stub.
 
 remove_speech_to_text() {
     if [ -d "$SPEECH_DIR" ]; then
@@ -228,7 +226,7 @@ if [ ! -f "$SETUP_DONE_FLAG" ]; then
 
     zenity --question \
         --title="Scrivenix — First-Run Setup" \
-        --text="Welcome to Scrivenix!\n\nFirst-run setup will:\n\n  1. Install Core Fonts             (~1–2 min)\n  2. Install SAPI                    (~1–2 min)\n  3. Install GDI+                    (~1–2 min)\n  4. Install .NET 4.8               (~5–10 min, Windows dialogs)\n  5. Download &amp; Install Scrivener  (~5–10 min, Windows dialog)\n  6. Configure font rendering        (~1 min)\n\nTotal estimated time: 15–25 minutes.\nPlease stay nearby — you will need to interact with\nthe Windows installer dialogs in steps 4 and 5.\n\nClick Begin Setup when you are ready." \
+        --text="Welcome to Scrivenix!\n\nFirst-run setup will:\n\n  1. Install Core Fonts             (~1–2 min)\n  2. Install .NET 4.8               (~5–10 min, two Windows dialogs)\n  3. Configure Windows compatibility (~1 min)\n  4. Download Scrivener              (~3–5 min)\n  5. Install Scrivener               (~2–3 min, Windows dialog)\n  6. Configure font rendering        (~1 min)\n\nTotal estimated time: 15–20 minutes.\nPlease stay nearby — you will need to interact with\nWindows installer dialogs in steps 2 and 5.\n\nNOTE: Step 2 runs two installers back to back (.NET 4\nthen .NET 4.8). A harmless warning will appear before\nthe second installer — click Continue to proceed.\n\nClick Begin Setup when you are ready." \
         --ok-label="Begin Setup" \
         --cancel-label="Cancel" \
         --width=500 \
@@ -243,21 +241,10 @@ if [ ! -f "$SETUP_DONE_FLAG" ]; then
     setup_progress_open
 
     # Step 1 — Core Fonts
-    setup_progress_update 8 "Step 1 of 8: Installing Core Fonts...\n\nDownloading and installing Windows core fonts.\nThis takes 1–2 minutes. Please wait."
+    setup_progress_update 10 "Step 1 of 6: Installing Core Fonts...\n\nDownloading and installing Windows core fonts.\nThis takes 1–2 minutes. Please wait."
     winetricks -q corefonts 2>/dev/null
 
-    # Step 2 — SAPI stub
-    # Provides a COM implementation for Windows Speech API so Scrivener's
-    # font-loading phase does not block on TTS voice enumeration.
-    setup_progress_update 13 "Step 2 of 8: Installing SAPI...\n\nInstalling the Speech API component.\nThis prevents a hang on the Scrivener loading screen.\nThis takes 1–2 minutes. Please wait."
-    winetricks -q sapi 2>/dev/null
-
-    # Step 3 — GDI+
-    # Improves Wine's GDI font rendering pipeline for sharper text in Scrivener.
-    setup_progress_update 18 "Step 3 of 8: Installing GDI+...\n\nInstalling graphics components for improved font rendering.\nThis takes 1–2 minutes. Please wait."
-    winetricks -q gdiplus 2>/dev/null
-
-    # Step 4 — .NET 4.8
+    # Step 2 — .NET 4.8
     # --force ensures .NET installs fully even if winetricks thinks it is
     # already present. Without this, Paddle.exe (Scrivener's license activation
     # binary) throws "Object reference not set to an instance of an object"
@@ -287,7 +274,7 @@ if [ ! -f "$SETUP_DONE_FLAG" ]; then
     # The progress window stays open — the .NET installer will appear on top.
 
     install_dotnet() {
-        setup_progress_update 23 "Step 4 of 8: Installing .NET 4.8...\n\nThis is the longest step — it typically takes 5–10 minutes.\nPlease be patient and do not close any windows.\n\nThe Windows installer is loading and will appear on top\nof this window in 30–60 seconds.\n\nIMPORTANT: You may see a warning that says:\n\"Windows Module Installer Service is not available\"\nThis is harmless — click Continue to proceed normally.\n\nWhen the installer appears:\n  → Click Install (or Continue past the warning first)\n  → Wait for installation to complete\n  → Click Finish"
+        setup_progress_update 15 "Step 2 of 6: Installing .NET 4.8...\n\nThis is the longest step — it typically takes 5–10 minutes.\nPlease be patient and do not close any windows.\n\nTwo Windows installers will run back to back:\n  → First: .NET 4 — click Install, then Finish\n  → Then: a warning will appear:\n     \"Windows Module Installer Service is not available\"\n     This is harmless — click Continue to proceed\n  → Second: .NET 4.8 — click Install, then Finish\n\nThe installer will appear on top of this window\nin 30–60 seconds."
         winetricks --force dotnet48 2>/dev/null
 
         # Kill mscorsvw.exe (.NET Native Image Generator) if still running.
@@ -295,7 +282,7 @@ if [ ! -f "$SETUP_DONE_FLAG" ]; then
         # and can run for an extremely long time in Wine — sometimes indefinitely.
         # It is safe to terminate: it is a background optimiser and Scrivener
         # does not require pre-compiled native images to run or activate.
-        setup_progress_update 38 "Step 4 of 8: Finalising .NET installation...\n\nTerminating background optimiser (mscorsvw.exe).\nThis is safe and expected. Please wait."
+        setup_progress_update 35 "Step 2 of 6: Finalising .NET installation...\n\nTerminating background optimiser (mscorsvw.exe).\nThis is safe and expected. Please wait."
         wine64 taskkill /f /im mscorsvw.exe >/dev/null 2>&1 || true
         wine64 taskkill /f /im mscorsvc.exe >/dev/null 2>&1 || true
     }
@@ -320,9 +307,9 @@ if [ ! -f "$SETUP_DONE_FLAG" ]; then
 
     # Verify — if failed, wait for wineserver to settle and retry once
     if ! verify_dotnet; then
-        setup_progress_update 40 "Step 4 of 8: Verifying .NET installation...\n\nFirst attempt did not complete successfully.\nWaiting for Wine to settle before retrying.\nPlease wait — this may take a few minutes."
+        setup_progress_update 40 "Step 2 of 6: Verifying .NET installation...\n\nFirst attempt did not complete successfully.\nWaiting for Wine to settle before retrying.\nPlease wait — this may take a few minutes."
         wineserver -w 2>/dev/null
-        setup_progress_update 42 "Step 4 of 8: Retrying .NET installation...\n\nRunning a second installation attempt.\nPlease follow the Windows installer prompts again if they appear."
+        setup_progress_update 45 "Step 2 of 6: Retrying .NET installation...\n\nRunning a second installation attempt.\nPlease follow the Windows installer prompts again if they appear."
         install_dotnet
         if ! verify_dotnet; then
             setup_progress_close
@@ -330,7 +317,7 @@ if [ ! -f "$SETUP_DONE_FLAG" ]; then
         fi
     fi
 
-    # Step 5 — Wait for .NET background work to finish, then set Windows 10 mode
+    # Step 3 — Wait for .NET background work to finish, then set Windows 10 mode
     # Required for Paddle.exe to communicate with the Scrivener license server.
     # Without this, activation fails even when .NET is correctly installed.
     #
@@ -341,15 +328,15 @@ if [ ! -f "$SETUP_DONE_FLAG" ]; then
     # version change, ensuring nothing is written to a partially-configured
     # prefix. Direct registry writes are used instead of winetricks win10 to
     # avoid winetricks triggering its own redundant wineserver -w call on top.
-    setup_progress_update 50 "Step 5 of 8: Waiting for .NET to finish...\n\nThe .NET installer is completing background tasks.\nThis is normal and may take several minutes.\n\nPlease do not close any windows or restart your computer.\nScrivenix will continue automatically when finished."
+    setup_progress_update 50 "Step 3 of 6: Finalising .NET and configuring Windows compatibility mode...\n\nThe .NET installer is completing background tasks and\nWindows version is being set to 10. This is normal and\nmay take several minutes.\n\nPlease do not close any windows or restart your computer.\nScrivenix will continue automatically when finished."
     wineserver -w 2>/dev/null
-    setup_progress_update 58 "Step 5 of 8: Configuring Windows compatibility mode...\n\nSetting Windows version to 10. Please wait."
-    wine64 reg add "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion" /v CurrentVersion /t REG_SZ /d "10.0" /f >/dev/null 2>&1
-    wine64 reg add "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion" /v CurrentBuildNumber /t REG_SZ /d "19041" /f >/dev/null 2>&1
-    wine64 reg add "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion" /v CSDVersion /t REG_SZ /d "" /f >/dev/null 2>&1
-    wine64 reg add "HKCU\\Software\\Wine" /v Version /t REG_SZ /d "win10" /f >/dev/null 2>&1
+    setup_progress_update 55 "Step 3 of 6: Finalising .NET and configuring Windows compatibility mode...\n\nApplying Windows version settings. Almost done — please wait."
+    "$WINELOADER" reg add "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion" /v CurrentVersion /t REG_SZ /d "10.0" /f >/dev/null 2>&1
+    "$WINELOADER" reg add "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion" /v CurrentBuildNumber /t REG_SZ /d "19041" /f >/dev/null 2>&1
+    "$WINELOADER" reg add "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion" /v CSDVersion /t REG_SZ /d "" /f >/dev/null 2>&1
+    "$WINELOADER" reg add "HKCU\\Software\\Wine" /v Version /t REG_SZ /d "win10" /f >/dev/null 2>&1
 
-    # Step 6 — Acquire Scrivener installer
+    # Step 4 — Acquire Scrivener installer
     # Acquisition order (first match wins):
     #   1. Already cached from a previous run        → use it directly
     #   2. Pre-staged by user in ~/Downloads         → copy to cache
@@ -357,7 +344,7 @@ if [ ! -f "$SETUP_DONE_FLAG" ]; then
     #   4. Download failed → file picker dialog      → copy chosen file to cache
     #
     # A non-empty cached file persists across relaunches, so a failed partial
-    # download or an interrupted setup does not require repeating steps 1–5.
+    # download or an interrupted setup does not require repeating steps 1–3.
     # -s tests for non-empty (-f alone would accept a 0-byte partial download).
 
     SCRIV_DL_URL="https://scrivener.s3.amazonaws.com/Scrivener-installer.exe"
@@ -371,13 +358,13 @@ if [ ! -f "$SETUP_DONE_FLAG" ]; then
 
         # 2. User pre-staged the installer in ~/Downloads before running setup
         if [ -s "$SCRIV_PRELOAD" ]; then
-            setup_progress_update 62 "Step 6 of 8: Using pre-downloaded installer...\n\nFound Scrivener-installer.exe in ~/Downloads.\nCopying to cache. Please wait."
+            setup_progress_update 62 "Step 4 of 6: Using pre-downloaded installer...\n\nFound Scrivener-installer.exe in ~/Downloads.\nCopying to cache. Please wait."
             cp "$SCRIV_PRELOAD" "$CACHE_DIR/scrivener-setup.exe"
             [ -s "$CACHE_DIR/scrivener-setup.exe" ] && return 0
         fi
 
         # 3. Automatic download
-        setup_progress_update 60 "Step 6 of 8: Downloading Scrivener 3...\n\nDownloading the Scrivener installer (~175 MB).\nThis may take several minutes depending on your connection.\nPlease wait."
+        setup_progress_update 60 "Step 4 of 6: Downloading Scrivener 3...\n\nDownloading the Scrivener installer (~175 MB).\nThis may take several minutes depending on your connection.\nPlease wait."
         rm -f "$CACHE_DIR/scrivener-setup.exe"
         curl -L --silent \
             "$SCRIV_DL_URL" \
@@ -392,7 +379,7 @@ if [ ! -f "$SETUP_DONE_FLAG" ]; then
         #    manually downloaded copy. The progress window stays open in the
         #    background; the file picker appears alongside it.
         rm -f "$CACHE_DIR/scrivener-setup.exe"
-        setup_progress_update 60 "Step 6 of 8: Download failed — waiting for your input...\n\nA dialog has appeared asking you to locate the\nScrivener installer. Please respond to that dialog."
+        setup_progress_update 60 "Step 4 of 6: Download failed — waiting for your input...\n\nA dialog has appeared asking you to locate the\nScrivener installer. Please respond to that dialog."
 
         local MANUAL_PATH
         MANUAL_PATH=$(zenity --file-selection \
@@ -411,7 +398,7 @@ if [ ! -f "$SETUP_DONE_FLAG" ]; then
             return 1
         fi
 
-        setup_progress_update 62 "Step 6 of 8: Copying installer to cache...\n\nPlease wait."
+        setup_progress_update 62 "Step 4 of 6: Copying installer to cache...\n\nPlease wait."
         cp "$MANUAL_PATH" "$CACHE_DIR/scrivener-setup.exe"
         [ -s "$CACHE_DIR/scrivener-setup.exe" ] && return 0
 
@@ -420,12 +407,12 @@ if [ ! -f "$SETUP_DONE_FLAG" ]; then
 
     if ! acquire_scrivener_installer; then
         setup_progress_close
-        error_exit "The Scrivener installer could not be obtained.\n\nTo continue, download the installer manually:\n  https://www.literatureandlatte.com/scrivener/download\n\nThen relaunch Scrivenix — you will be prompted to\nlocate the file. Steps 1–5 will not repeat.\n\nAlternatively, save the downloaded file as:\n  ~/Downloads/Scrivener-installer.exe\nand relaunch — Scrivenix will find it automatically."
+        error_exit "The Scrivener installer could not be obtained.\n\nTo continue, download the installer manually:\n  https://www.literatureandlatte.com/scrivener/download\n\nThen relaunch Scrivenix — you will be prompted to\nlocate the file. Steps 1–3 will not repeat.\n\nAlternatively, save the downloaded file as:\n  ~/Downloads/Scrivener-installer.exe\nand relaunch — Scrivenix will find it automatically."
     fi
 
-    # Step 7 — Scrivener installer
+    # Step 5 — Scrivener installer
     # Progress window stays open — installer appears on top of it.
-    setup_progress_update 75 "Step 7 of 8: Installing Scrivener 3...\n\nThe Scrivener installer will appear on top of this\nwindow in a moment. Please wait.\n\nWhen the installer appears:\n  → Click Next / Install\n  → Wait for installation to complete\n  → Click Finish"
+    setup_progress_update 75 "Step 5 of 6: Installing Scrivener 3...\n\nThe Scrivener installer will appear on top of this\nwindow in a moment. Please wait.\n\nWhen the installer appears:\n  → Click Next / Install\n  → Wait for installation to complete\n  → Click Finish"
     wine "$CACHE_DIR/scrivener-setup.exe" 2>/dev/null
 
     # Verify the install succeeded before continuing
@@ -435,20 +422,20 @@ if [ ! -f "$SETUP_DONE_FLAG" ]; then
         exit 1
     fi
 
-    # Step 8 — Compatibility fixes and font smoothing
-    setup_progress_update 88 "Step 8 of 8: Applying final configuration...\n\nRemoving texttospeech folder and configuring font\nrendering. Almost done — please wait."
+    # Step 6 — Compatibility fixes and font smoothing
+    setup_progress_update 90 "Step 6 of 6: Applying final configuration...\n\nRemoving texttospeech folder and configuring font\nrendering. Almost done — please wait."
     remove_speech_to_text
     configure_fonts
 
     # Wait for all Wine processes from configure_fonts (winetricks, reg add) to
     # exit cleanly. Without this, wineserver is still busy when the winecfg
     # prompt fires immediately below, causing winecfg to deadlock on connection.
-    setup_progress_update 95 "Step 8 of 8: Finalising configuration...\n\nWaiting for Wine to settle. Almost done — please wait."
+    setup_progress_update 95 "Step 6 of 6: Finalising configuration...\n\nWaiting for Wine to settle. Almost done — please wait."
     wineserver -w 2>/dev/null
 
     setup_progress_update 100 "Setup complete! Scrivener 3 is ready."
-    sleep 2
     setup_progress_close
+    info "Setup complete!\n\nScrivener 3 has been installed successfully."
 
     touch "$SETUP_DONE_FLAG"
 
@@ -460,7 +447,7 @@ if [ ! -f "$SETUP_DONE_FLAG" ]; then
 
     zenity --question \
         --title="Scrivenix — Display Scaling" \
-        --text="Setup is complete! Before Scrivener launches, you may want to adjust display scaling.\n\nScrivener's UI elements (menus, toolbar, sidebar) may appear small on some screens. The Wine Configuration window that is about to open lets you fix this.\n\n  1. Click the Graphics tab\n  2. Increase the DPI value (144 is a good starting point for most screens)\n  3. Click Apply, then OK\n\nScrivener will launch immediately after you close the configuration window.\n\nIf everything looks fine at the default size, just click Skip." \
+        --text="Setup is complete! Before Scrivener launches, you may want to adjust display scaling.\n\nIn the Wine Configuration window that is about to open:\n\nGraphics tab:\n  1. Increase the DPI value if Scrivener's UI looks too small\n     (144 is a good starting point for most screens)\n  2. Click Apply\n\nApplications tab:\n  Windows 10 compatibility mode has been configured\n  automatically. You can verify it is set correctly here.\n\nScrivener will launch immediately after you close\nthe configuration window.\n\nIf everything looks fine at the default size, just click Skip." \
         --ok-label="Open Display Settings" \
         --cancel-label="Skip — Launch Scrivener Now" \
         --width=500 \
