@@ -11,13 +11,14 @@ Scrivenix is a Flatpak application that automatically downloads, installs, and l
 ## Status
 
 **Beta** — Confirmed working on:
-- Fedora (Wayland / GNOME)
-- Linux Mint (X11 / Cinnamon)
-- Manjaro (Wayland / KDE)
-- PopOS (Wayland / Cosmic)
-- Debian (Wayland / Gnome)
-- Ubuntu 24.04 LTS (Waylaond / Gnome)
-- KDE Neon (Wayland / KDE)
+
+* Fedora (Wayland / GNOME)
+* Linux Mint (X11 / Cinnamon)
+* Manjaro (Wayland / KDE)
+* PopOS (Wayland / Cosmic)
+* Debian (Wayland / Gnome)
+* Ubuntu 24.04 LTS (Wayland / Gnome)
+* KDE Neon (Wayland / KDE)
 
 Testing on additional distributions is ongoing. See [Known Issues](#known-issues) before installing.
 
@@ -25,25 +26,25 @@ Testing on additional distributions is ongoing. See [Known Issues](#known-issues
 
 ## What Scrivenix Does
 
-- Initializes a Wine 64-bit prefix isolated to the Scrivenix Flatpak sandbox
-- Installs Windows core fonts, SAPI, GDI+, and .NET 4.8 via winetricks
-- Downloads the official Scrivener 3 installer directly from Literature & Latte
-- Removes the `texttospeech` folder that causes Scrivener to hang on "Loading Fonts"
-- Configures ClearType font smoothing for readable text rendering
-- Supports license activation via Scrivener's built-in Paddle licensing system
-- Provides a guided display scaling tool (via winecfg) for adjusting UI size
-- Maps your `~/Documents` folder into the Wine prefix so your projects are accessible
-- Self-heals after Scrivener updates by re-checking compatibility fixes on every launch
+* Initializes a Wine 64-bit prefix isolated to the Scrivenix Flatpak sandbox
+* Installs Windows core fonts and .NET 4.8 via winetricks
+* Downloads the official Scrivener 3 installer directly from Literature & Latte
+* Removes the `texttospeech` folder that causes Scrivener to hang on "Loading Fonts"
+* Configures ClearType font smoothing for readable text rendering
+* Supports license activation via Scrivener's built-in Paddle licensing system
+* Provides a guided display scaling tool (via winecfg) for adjusting UI size
+* Maps your `~/Documents` folder into the Wine prefix so your projects are accessible
+* Self-heals after Scrivener updates by re-checking compatibility fixes on every launch
 
 ---
 
 ## Requirements
 
-- Linux with Flatpak support
-- `flatpak-builder` installed
-- ~3 GB free disk space (1.5 GB runtimes + Wine prefix + Scrivener)
-- A valid Scrivener 3 for Windows license
-- Internet connection during setup
+* Linux with Flatpak support
+* `flatpak-builder` installed
+* ~3 GB free disk space (1.5 GB runtimes + Wine prefix + Scrivener)
+* A valid Scrivener 3 for Windows license
+* Internet connection during setup
 
 ---
 
@@ -53,7 +54,7 @@ Testing on additional distributions is ongoing. See [Known Issues](#known-issues
 
 Most distros include Flatpak but not flatpak-builder. Install both:
 
-```bash
+```
 # Debian / Ubuntu / Linux Mint
 sudo apt install flatpak flatpak-builder
 
@@ -70,7 +71,7 @@ Run each command one at a time. Choose **user** when asked which installation to
 
 Scrivenix uses the freedesktop 24.08 runtime, which is a current supported release. You should not see any end-of-life warnings during this step.
 
-```bash
+```
 flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 
 flatpak install --user flathub org.freedesktop.Platform//24.08
@@ -88,7 +89,7 @@ flatpak install --user flathub org.freedesktop.Platform.Compat.i386//24.08
 
 Download this repository as a ZIP file (click the green **Code** button → **Download ZIP**), extract it, open a terminal in the extracted folder, and run:
 
-```bash
+```
 flatpak-builder --force-clean --install --user build-dir com.local.Scrivenix.yml
 ```
 
@@ -96,28 +97,32 @@ flatpak-builder --force-clean --install --user build-dir com.local.Scrivenix.yml
 
 Launch Scrivenix from your application menu, or run:
 
-```bash
+```
 flatpak run com.local.Scrivenix
 ```
 
-A setup wizard will guide you through the rest. See [INSTALL.txt](INSTALL.txt) for a detailed walkthrough of each setup step.
+A setup wizard will guide you through the rest. The setup runs 6 steps and takes approximately 15–20 minutes. See [INSTALL.txt](https://github.com/adgalloway/Scrivenix/blob/main/INSTALL.txt) for a detailed walkthrough of each setup step.
+
+> **Note:** Step 2 (.NET 4.8) runs two Windows installers back to back. A harmless warning — "Windows Module Installer Service is not available" — will appear before the second installer. Click Continue to proceed normally.
 
 ---
 
 ## Display Scaling
 
-Scrivener's UI elements (menus, toolbar, sidebar) may appear small on some screens. After setup completes, Scrivenix prompts you to adjust display scaling via Wine Configuration. You can also access this at any time by right-clicking the Scrivenix icon in your application menu and choosing **Display & Font Settings**.
+Scrivener's UI elements (menus, toolbar, sidebar) may appear small on some screens. After setup completes, Scrivenix prompts you to adjust display scaling and verify your Windows version setting via Wine Configuration. You can also access this at any time by right-clicking the Scrivenix icon in your application menu and choosing **Display & Font Settings**.
 
-In the Wine Configuration window, go to the **Graphics** tab and increase the DPI value. 144 DPI is a good starting point for most screens.
+In the Wine Configuration window:
+
+**Graphics tab** — increase the DPI value if Scrivener's UI looks too small. 144 DPI is a good starting point for most screens.
+
+**Applications tab** — Windows 10 compatibility mode is configured automatically during setup. You can verify it is set correctly here.
 
 > **Cinnamon users:** The right-click menu option may not appear in Cinnamon. If so, run:
-> ```bash
-> flatpak run --command=wine64 com.local.Scrivenix winecfg
+>
 > ```
-OR if that fails try:
-> ```bash
 > flatpak run com.local.Scrivenix --winecfg
 > ```
+
 ---
 
 ## Cloud Storage
@@ -131,25 +136,29 @@ Scrivener projects stored in Dropbox, Google Drive, OneDrive, or any other cloud
 **Cinnamon + Wayland:** Shift, Ctrl, and Alt keys do not work correctly in Scrivener when running Linux Mint or any Cinnamon-based desktop under a Wayland session. This is a bug in Cinnamon's XWayland implementation and cannot be fixed at the application level. The solution is to log out and select a **Cinnamon (X11)** session from the login screen.
 
 To check whether this affects you:
-```bash
+
+```
 echo $XDG_CURRENT_DESKTOP $WAYLAND_DISPLAY
 ```
+
 If the output contains both `Cinnamon` and a display value, switch to an X11 session. If `WAYLAND_DISPLAY` is blank, you are already on X11 and this does not apply.
 
 **Silent exit after setup:** If Scrivener exits immediately and silently the first time it launches after setup completes, this can be caused by a Wine prefix that was built with an older version of Wine becoming incompatible with the current runtime. Use the clean reinstall commands in [Starting Fresh](#starting-fresh) to resolve it.
 
 **Cinnamon Broken Desktop Icon:** Desktop shortcut via "Add to Desktop" (Cinnamon/XFCE): Right-clicking the Scrivenix app menu entry and choosing "Add to Desktop" produces a broken shortcut on Cinnamon and XFCE. This is a known Cinnamon/Nemo bug affecting all Flatpak apps, not specific to Scrivenix. To create a working desktop shortcut manually, run:
-```bash
+
+```
 ~/.local/share/flatpak/exports/share/applications/com.local.Scrivenix.desktop ~/Desktop/
 chmod +x ~/Desktop/com.local.Scrivenix.desktop
 ```
+
 Right-click the resulting icon and choose Allow Launching if prompted. The app menu shortcut is unaffected and works correctly.
 
 ---
 
 ## Uninstalling
 
-```bash
+```
 flatpak uninstall com.local.Scrivenix -y
 rm -rf ~/.var/app/com.local.Scrivenix
 ```
@@ -161,7 +170,7 @@ rm -rf ~/.var/app/com.local.Scrivenix
 If setup fails or you want a completely clean reinstall, run all of
 these commands from your Scrivenix project directory:
 
-```bash
+```
 flatpak uninstall com.local.Scrivenix -y
 rm -rf ~/.var/app/com.local.Scrivenix
 rm -rf build-dir .flatpak-builder repo
@@ -184,7 +193,7 @@ Scrivenix was inspired by the [Lutris](https://lutris.net) install script for Sc
 
 ## License
 
-Scrivenix (the wrapper scripts, manifest, and supporting files) is released under the Mozilla Public License 2.0. See [LICENSE](LICENSE) for details.
+Scrivenix (the wrapper scripts, manifest, and supporting files) is released under the Mozilla Public License 2.0. See [LICENSE](https://github.com/adgalloway/Scrivenix/blob/main/LICENSE) for details.
 
 Scrivener 3 is proprietary software © Literature & Latte Ltd. A valid license is required. Scrivenix does not distribute or modify Scrivener in any way.
 
