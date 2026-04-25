@@ -142,8 +142,8 @@ The setup includes 6 steps:
              is normal. Please do not close any windows or restart
              your computer during this time.
 
-  Step 3: Finalising .NET and configuring Windows 10 compatibility
-          mode (automatic, no input needed)
+  Step 3: Configuring Windows 10 compatibility mode
+          (automatic, no input needed)
 
   Step 4: Downloading Scrivener (~175 MB, no input needed)
 
@@ -251,7 +251,7 @@ and XFCE. This is a known Cinnamon/Nemo bug affecting all Flatpak
 apps, not specific to Scrivenix. To create a working desktop shortcut
 manually, run:
 
-    ~/.local/share/flatpak/exports/share/applications/com.local.Scrivenix.desktop ~/Desktop/
+    cp ~/.local/share/flatpak/exports/share/applications/com.local.Scrivenix.desktop ~/Desktop/
     chmod +x ~/Desktop/com.local.Scrivenix.desktop
 
 Right-click the resulting icon and choose Allow Launching if prompted.
