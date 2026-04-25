@@ -27,7 +27,7 @@ Testing on additional distributions is ongoing. See [Known Issues](#known-issues
 ## What Scrivenix Does
 
 * Initializes a Wine 64-bit prefix isolated to the Scrivenix Flatpak sandbox
-* Installs Windows core fonts and .NET 4.8 via winetricks
+* Installs Windows core fonts and .NET 4 and .NET 4.8 via winetricks
 * Downloads the official Scrivener 3 installer directly from Literature & Latte
 * Removes the `texttospeech` folder that causes Scrivener to hang on "Loading Fonts"
 * Configures ClearType font smoothing for readable text rendering
@@ -148,7 +148,7 @@ If the output contains both `Cinnamon` and a display value, switch to an X11 ses
 **Cinnamon Broken Desktop Icon:** Desktop shortcut via "Add to Desktop" (Cinnamon/XFCE): Right-clicking the Scrivenix app menu entry and choosing "Add to Desktop" produces a broken shortcut on Cinnamon and XFCE. This is a known Cinnamon/Nemo bug affecting all Flatpak apps, not specific to Scrivenix. To create a working desktop shortcut manually, run:
 
 ```
-~/.local/share/flatpak/exports/share/applications/com.local.Scrivenix.desktop ~/Desktop/
+cp ~/.local/share/flatpak/exports/share/applications/com.local.Scrivenix.desktop ~/Desktop/
 chmod +x ~/Desktop/com.local.Scrivenix.desktop
 ```
 
