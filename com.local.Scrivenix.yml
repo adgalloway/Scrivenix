@@ -57,6 +57,17 @@ finish-args:
   # Include both 64-bit and 32-bit library paths.
   # /app/lib/i386-linux-gnu is the Compat.i386 extension mountpoint.
   - --env=LD_LIBRARY_PATH=/app/lib:/app/lib32:/app/lib/i386-linux-gnu
+  # Strip host Wine/gaming variables that bleed into the sandbox from gaming
+  # or pro-audio setups. Belt-and-suspenders with the unset block in the wrapper.
+  - --unset-env=WINEESYNC
+  - --unset-env=WINEFSYNC
+  - --unset-env=WINEDLLOVERRIDES
+  - --unset-env=LD_PRELOAD
+  - --unset-env=STAGING_SHARED_MEMORY
+  - --unset-env=STAGING_WRITECOPY
+  - --unset-env=WINEFSYNC_FUTEX2
+  - --unset-env=WINE_MONO_OVERRIDES
+  - --unset-env=GDK_BACKEND
 
 modules:
 
