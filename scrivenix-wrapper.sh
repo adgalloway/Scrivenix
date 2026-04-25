@@ -8,6 +8,15 @@ export WINEPREFIX="$HOME/.var/app/com.local.Scrivenix/wine"
 export WINEARCH=win64
 export WINEDEBUG=-all
 
+# Strip host Wine/gaming environment variables that bleed into the Flatpak
+# sandbox from gaming or pro-audio setups and can interfere with wineboot,
+# winetricks, or display connections. None of these are used by Scrivener.
+unset WINEESYNC WINEFSYNC WINEDLLOVERRIDES LD_PRELOAD \
+      WINE_LARGE_ADDRESS_AWARE MANGOHUD MANGOHUD_CONFIG \
+      DXVK_STATE_CACHE_PATH PROTON_NO_ESYNC PROTON_NO_FSYNC \
+      STAGING_SHARED_MEMORY STAGING_WRITECOPY WINEFSYNC_FUTEX2 \
+      WINE_MONO_OVERRIDES GDK_BACKEND
+
 # The Flatpak Wine base only ships 64-bit libraries (x86_64-unix/windows).
 # /app/bin/wine is the 32-bit loader and will crash immediately because
 # i386-unix/ntdll.so is absent. Force all Wine tools — including winetricks
@@ -285,6 +294,11 @@ if [ ! -f "$SETUP_DONE_FLAG" ]; then
         setup_progress_update 35 "Step 2 of 6: Finalising .NET installation...\n\nTerminating background optimiser (mscorsvw.exe).\nThis is safe and expected. Please wait."
         wine64 taskkill /f /im mscorsvw.exe >/dev/null 2>&1 || true
         wine64 taskkill /f /im mscorsvc.exe >/dev/null 2>&1 || true
+        # mscorsvw.exe can be restarted by the .NET service framework immediately
+        # after taskkill returns. Force-terminate the entire Wine server so no
+        # background .NET process can linger and block the Step 3 wineserver wait.
+        wineserver -k 2>/dev/null || true
+        sleep 2
     }
 
     verify_dotnet() {
@@ -317,20 +331,15 @@ if [ ! -f "$SETUP_DONE_FLAG" ]; then
         fi
     fi
 
-    # Step 3 — Wait for .NET background work to finish, then set Windows 10 mode
+    # Step 3 — Set Windows 10 compatibility mode.
     # Required for Paddle.exe to communicate with the Scrivener license server.
     # Without this, activation fails even when .NET is correctly installed.
     #
-    # When the .NET installer UI closes, .NET continues running background tasks
-    # inside Wine (registering COM components, writing assembly caches, running
-    # post-install scripts) for several minutes with no visible UI. We wait
-    # explicitly for all Wine processes to finish before applying the Windows
-    # version change, ensuring nothing is written to a partially-configured
-    # prefix. Direct registry writes are used instead of winetricks win10 to
-    # avoid winetricks triggering its own redundant wineserver -w call on top.
-    setup_progress_update 50 "Step 3 of 6: Finalising .NET and configuring Windows compatibility mode...\n\nThe .NET installer is completing background tasks and\nWindows version is being set to 10. This is normal and\nmay take several minutes.\n\nPlease do not close any windows or restart your computer.\nScrivenix will continue automatically when finished."
-    wineserver -w 2>/dev/null
-    setup_progress_update 55 "Step 3 of 6: Finalising .NET and configuring Windows compatibility mode...\n\nApplying Windows version settings. Almost done — please wait."
+    # install_dotnet already called wineserver -k to force-terminate all Wine
+    # processes including any service-restarted mscorsvw.exe siblings. No wait
+    # needed here. Direct registry writes used instead of winetricks win10 to
+    # avoid winetricks triggering its own redundant wineserver -w.
+    setup_progress_update 50 "Step 3 of 6: Configuring Windows compatibility mode...\n\nApplying Windows 10 settings. Please wait."
     "$WINELOADER" reg add "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion" /v CurrentVersion /t REG_SZ /d "10.0" /f >/dev/null 2>&1
     "$WINELOADER" reg add "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion" /v CurrentBuildNumber /t REG_SZ /d "19041" /f >/dev/null 2>&1
     "$WINELOADER" reg add "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion" /v CSDVersion /t REG_SZ /d "" /f >/dev/null 2>&1
@@ -456,10 +465,10 @@ if [ ! -f "$SETUP_DONE_FLAG" ]; then
             # After the wineserver -w above, the server process can still be in a
             # brief shutdown state on Wine 11 WoW64. If winecfg tries to start
             # while it is in that state it deadlocks, making Scrivenix appear hung.
-            # -k sends SIGKILL immediately; sleep 1 gives the process table time
-            # to clear before winecfg starts a clean new server instance.
+            # Poll until the process is truly gone rather than using a fixed sleep,
+            # which was unreliable across systems in testing.
             wineserver -k 2>/dev/null
-            sleep 1
+            while pgrep -u "$USER" -x wineserver >/dev/null 2>&1; do sleep 0.5; done
             "$WINELOADER" winecfg
             # Wait for winecfg's registry writes (DPI value) to be flushed to
             # disk by wineserver before Scrivener reads the registry on launch.
