@@ -184,6 +184,23 @@ configure_fonts() {
     unset _font
 }
 
+# --- QT FONT ENGINE CONFIGURATION --------------------------------------------
+# Scrivener's installer writes qt.conf with "WindowsArguments = darkmode=1".
+# By default this leaves Qt's text rendering routed through Windows' native
+# GDI path, which under Wine mis-renders Microsoft-style fonts and does not
+# apply GPOS kerning tables (see letter-spacing issues like "Manuscript" in
+# the binder). A beta tester confirmed that forcing Qt's own FreeType font
+# engine instead fixes both. Patches the file idempotently (only appends if
+# not already present) on every launch, so it self-heals if a Scrivener
+# update ever rewrites qt.conf.
+
+configure_qt_font_engine() {
+    local QT_CONF="$WINEPREFIX/drive_c/Program Files/Scrivener3/qt.conf"
+    if [ -f "$QT_CONF" ] && ! grep -q "fontengine=freetype" "$QT_CONF"; then
+        sed -i 's/^WindowsArguments = darkmode=1$/WindowsArguments = darkmode=1,fontengine=freetype/' "$QT_CONF"
+    fi
+}
+
 # --- WINECFG LAUNCHER --------------------------------------------------------
 # Launched via the right-click "Display & Font Settings" desktop action.
 # Opens Wine's built-in configuration tool directly against the Scrivenix
@@ -504,9 +521,12 @@ if [ ! -f "$SCRIV_EXE" ]; then
 fi
 
 remove_speech_to_text
+configure_qt_font_engine
 
-# FREETYPE_PROPERTIES: use the older TrueType interpreter (v35) for better
-# hinting at small sizes than the newer CFF-focused v40 engine.
-exec env FREETYPE_PROPERTIES="truetype:interpreter-version=35" \
+# FREETYPE_PROPERTIES: use the modern TrueType interpreter (v40). The v35
+# override previously here dated back to the initial commit and was never
+# actually validated against Scrivener's UI — a beta tester confirmed it
+# mis-renders Microsoft-style fonts; v40 is Wine's own default elsewhere.
+exec env FREETYPE_PROPERTIES="truetype:interpreter-version=40" \
     WINEDLLOVERRIDES="cryptbase=b" \
     wine "$SCRIV_EXE" 2>/dev/null
