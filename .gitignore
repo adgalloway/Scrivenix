@@ -17,3 +17,7 @@ cache/
 
 # Log files
 *.log
+
+# Ad-hoc diagnostic tools sent to individual beta testers — not shipped product files
+DIAGNOSTIC-*.txt
+scrivenix-wrapper-diagnostic*.sh

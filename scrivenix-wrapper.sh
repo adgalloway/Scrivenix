@@ -166,6 +166,22 @@ configure_fonts() {
     "$WINELOADER" reg add "HKCU\\Control Panel\\Desktop" /v FontSmoothingType        /t REG_DWORD /d 2    /f >/dev/null 2>&1
     "$WINELOADER" reg add "HKCU\\Control Panel\\Desktop" /v FontSmoothingGamma       /t REG_DWORD /d 1000 /f >/dev/null 2>&1
     "$WINELOADER" reg add "HKCU\\Control Panel\\Desktop" /v FontSmoothingOrientation /t REG_DWORD /d 1    /f >/dev/null 2>&1
+
+    # Wine 11 crashes when the Corrections tab opens if no installed font has
+    # OpenType GSUB tables for Devanagari (script 11), Bengali (12), or
+    # Gurmukhi (13). corefonts Arial lacks all three. After the third
+    # consecutive "missing" response Wine returns INVALID_HANDLE_VALUE as a
+    # font handle and immediately dereferences it (access violation at -1).
+    # GNU FreeSans ships with the Flatpak runtime and carries deva/beng/guru
+    # OpenType tables, giving Qt a valid fallback for those scripts.
+    local WINE_FONTS="$WINEPREFIX/drive_c/windows/fonts"
+    for _font in /usr/share/fonts/gnu-free/FreeSans.ttf \
+                 /usr/share/fonts/gnu-free/FreeSansBold.ttf \
+                 /usr/share/fonts/gnu-free/FreeSansBoldOblique.ttf \
+                 /usr/share/fonts/gnu-free/FreeSansOblique.ttf; do
+        [ -f "$_font" ] && cp "$_font" "$WINE_FONTS/" 2>/dev/null
+    done
+    unset _font
 }
 
 # --- WINECFG LAUNCHER --------------------------------------------------------
